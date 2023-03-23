@@ -1,92 +1,113 @@
-use async_trait::async_trait;
-use serde::{de::DeserializeOwned, Serialize};
-use std::{borrow::Borrow, collections::BTreeMap, error::Error};
+use std::sync::Arc;
+use rocksdb::{DBWithThreadMode, MultiThreaded, Options};
+use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
+use valico::json_dsl::Builder;
 
+pub type MoeDbMode = DBWithThreadMode<MultiThreaded>;
 
-pub trait Map<'a, K, V>
-    where
-        K: Serialize + DeserializeOwned + ?Sized,
-        V: Serialize + DeserializeOwned,
-{
-    type Error: Error;
-    type Iterator: Iterator<Item = (K, V)>;
-    type Keys: Iterator<Item = K>;
-    type Values: Iterator<Item = V>;
-
-    fn contains_key(&self, key: &K) -> Result<bool, Self::Error>;
-    fn get(&self, key: &K) -> Result<Option<V>, Self::Error>;
-    fn get_raw_bytes(&self, key: &K) -> Result<Option<Vec<u8>>, Self::Error>;
-    fn get_or_insert_unsafe<F: FnOnce() -> V>(
-        &self,
-        key: &K,
-        default: F,
-    ) -> Result<V, Self::Error> {
-        self.get(key).and_then(|optv| match optv {
-            Some(v) => Ok(v),
-            None => {
-                self.insert(key, &default())?;
-                self.get(key).transpose().expect("default just inserted")
-            }
-        })
-    }
-    fn insert(&self, key: &K, value: &V) -> Result<(), Self::Error>;
-    fn remove(&self, key: &K) -> Result<(), Self::Error>;
-    fn clear(&self) -> Result<(), Self::Error>;
-    fn is_empty(&self) -> bool;
-    fn iter(&'a self) -> Self::Iterator;
-    fn keys(&'a self) -> Self::Keys;
-    fn values(&'a self) -> Self::Values;
-    fn multi_get<J>(&self, keys: impl IntoIterator<Item = J>) -> Result<Vec<Option<V>>, Self::Error>
-        where
-            J: Borrow<K>,
-    {
-        keys.into_iter().map(|key| self.get(key.borrow())).collect()
-    }
-    fn multi_insert<J, U>(
-        &self,
-        key_val_pairs: impl IntoIterator<Item = (J, U)>,
-    ) -> Result<(), Self::Error>
-        where
-            J: Borrow<K>,
-            U: Borrow<V>,
-    {
-        key_val_pairs
-            .into_iter()
-            .try_for_each(|(key, value)| self.insert(key.borrow(), value.borrow()))
-    }
-    fn multi_remove<J>(&self, keys: impl IntoIterator<Item = J>) -> Result<(), Self::Error>
-        where
-            J: Borrow<K>,
-    {
-        keys.into_iter()
-            .try_for_each(|key| self.remove(key.borrow()))
-    }
-    fn try_catch_up_with_primary(&self) -> Result<(), Self::Error>;
+pub struct MoeDb<'a> {
+    pub db: Arc<MoeDbMode>,
+    pub opts: Arc<Options>,
+    pub path: &'a str,
+    pub log: &'a str
 }
 
-#[async_trait]
-pub trait AsyncMap<'a, K, V>
-    where
-        K: Serialize + DeserializeOwned + ?Sized + std::marker::Sync,
-        V: Serialize + DeserializeOwned + std::marker::Sync + std::marker::Send,
-{
-    type Error: Error;
-    type Iterator: Iterator<Item = (K, V)>;
-    type Keys: Iterator<Item = K>;
-    type Values: Iterator<Item = V>;
-    
-    async fn contains_key(&self, key: &K) -> Result<bool, Self::Error>;
-    async fn get(&self, key: &K) -> Result<Option<V>, Self::Error>;
-    async fn get_raw_bytes(&self, key: &K) -> Result<Option<Vec<u8>>, Self::Error>;
-    async fn is_empty(&self) -> bool;
-    async fn iter(&'a self) -> Self::Iterator;
-    async fn keys(&'a self) -> Self::Keys;
-    async fn values(&'a self) -> Self::Values;
-    async fn multi_get<J>(
-        &self,
-        keys: impl IntoIterator<Item = J> + std::marker::Send,
-    ) -> Result<Vec<Option<V>>, Self::Error>
-        where
-            J: Borrow<K>;
-    async fn try_catch_up_with_primary(&self) -> Result<(), Self::Error>;
+pub struct Exec {
+    pub db: Arc<MoeDbMode>,
+    pub opts: Arc<Options>,
+}
+
+pub struct Ops {
+    pub db: Arc<MoeDbMode>,
+    pub opts: Arc<Options>,
+}
+
+#[derive(Clone)]
+pub struct ParsedStatement {
+    pub cmd: Option<ActionType>,
+    pub db: String,
+    pub store: String,
+    pub pbs_data: String
+}
+
+#[derive(Clone)]
+pub struct Response {
+    pub time_taken: String,
+    pub error: bool,
+    pub message: String,
+    pub data: Option<Value>
+}
+
+pub struct Jql {
+    pub prs: Builder
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct JqlSchema {
+    pub _name: String,
+    pub _key: String,
+    pub _fields: Vec<JqlSchemaFields>
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct JqlSchemaFields {
+    pub _name: String,
+    pub _declare: String,
+    pub _optional: Option<String>
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct JqlCommand {
+    pub _action: String,
+    pub _body: Option<JqlSchema>,
+    pub _database: Option<String>,
+    pub _collection: Option<String>
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub enum DataTypes {
+    Int,
+    Uint,
+    Float,
+    String,
+    Boolean,
+    Date,
+    DateTime,
+    Time,
+    ArrayOfString,
+    ArrayOfInt,
+    ArrayOfUint,
+    ArrayOfFloat,
+    ArrayOfBoolean
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub enum Types {
+    Name,
+    Key,
+    Fields,
+    InMemory,
+    Declare
+}
+
+#[derive(Clone,Ord, PartialOrd, Eq, Debug)]
+pub enum ActionType {
+    Create,
+    CreateDb,
+    Get,
+    Upsert,
+    Delete,
+    Drop,
+    DropDb,
+    DbList,
+    Truncate
+}
+
+#[derive(Clone,Ord, PartialOrd, Eq, Debug)]
+pub enum CommandType {
+    Action,
+    Body,
+    Database,
+    Store
 }

@@ -16,6 +16,8 @@ impl From<String> for DataTypes {
             "string" => DataTypes::String,
             "boolean" => DataTypes::Boolean,
             "date" => DataTypes::Date,
+            "time" => DataTypes::Time,
+            "datetime" => DataTypes::DateTime,
             "int[]" => DataTypes::ArrayOfInt,
             "uint[]" => DataTypes::ArrayOfUint,
             "float[]" => DataTypes::ArrayOfFloat,
@@ -26,7 +28,7 @@ impl From<String> for DataTypes {
 }
 
 impl DataTypes {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
             DataTypes::Int => "int".to_string(),
             DataTypes::Uint => "uint".to_string(),
@@ -34,6 +36,8 @@ impl DataTypes {
             DataTypes::String => "string".to_string(),
             DataTypes::Boolean => "boolean".to_string(),
             DataTypes::Date => "date".to_string(),
+            DataTypes::Time => "time".to_string(),
+            DataTypes::DateTime => "datetime".to_string(),
             DataTypes::ArrayOfString => "string[]".to_string(),
             DataTypes::ArrayOfInt => "int[]".to_string(),
             DataTypes::ArrayOfUint => "uint[]".to_string(),
