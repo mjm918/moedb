@@ -1,0 +1,4 @@
+[moedb]
+db_path = "/Users/julfikar/Documents/Personal.nosync/moedb/tests/moedb"
+log_path = "/Users/julfikar/Documents/Personal.nosync/moedb/tests/moedb-log"
+default_auth = ["root","admin"]
