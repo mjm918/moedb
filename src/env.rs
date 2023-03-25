@@ -24,12 +24,14 @@ pub fn env() -> Result<MoeDb,EnvReadError> {
         error!("{}",err);
         return Err(EnvReadError::NoContent(err));
     }
+
     let sys_cfg: Result<BaseConfig,toml::de::Error> = toml::from_str(content.unwrap().as_str());
     if sys_cfg.is_err() {
         let err = sys_cfg.err().unwrap().to_string();
         error!("{}",err);
         return Err(EnvReadError::InvalidToml(err));
     }
+
     let moedb = sys_cfg.unwrap().moedb;
     let mtd_db = fs::metadata(moedb.db_path.as_str());
     if mtd_db.is_err() || !mtd_db.as_ref().unwrap().is_dir() {
@@ -37,6 +39,7 @@ pub fn env() -> Result<MoeDb,EnvReadError> {
         error!("{}",err);
         return Err(EnvReadError::DbPathNotValid(err));
     }
+    
     let mtd_log = fs::metadata(moedb.log_path.as_str());
     if mtd_log.is_err() || !mtd_log.as_ref().unwrap().is_dir() {
         let err = mtd_log.err().unwrap().to_string();
