@@ -13,7 +13,7 @@ use crate::traits::JqlSchemaParser;
 /// Schema Checker
 ///
 impl JqlSchemaParser for Jql {
-    fn new() -> Self {
+    fn new_schema_parser() -> Self {
         Self {
             prs: Builder::build(|b|{
                 b.req(Types::Name.as_str(), Jql::naming_regx);
@@ -30,12 +30,12 @@ impl JqlSchemaParser for Jql {
         }
     }
 
-    fn parse(&self, values: String) -> Result<(), JqlError> {
+    fn parse_schema(&self, values: String) -> Result<(), JqlError> {
         let mut val = serde_json::from_str(values.as_str());
-        self.parse_with_value(val)
+        self.parse_schema_with_json(val)
     }
 
-    fn parse_with_value(&self, values: serde_json::Result<Value>) -> std::result::Result<(), JqlError> {
+    fn parse_schema_with_json(&self, values: serde_json::Result<Value>) -> std::result::Result<(), JqlError> {
         if values.is_ok() {
             let mut v = values.unwrap();
             let state = self.prs.process(&mut v, None);
@@ -74,7 +74,7 @@ mod tests {
         let schema = r#"
             {
                 "_name":"person",
-                "_key":"id",
+                "_key":"ids",
                 "_fields":[
                     {
                         "_name":"hello",
@@ -84,9 +84,9 @@ mod tests {
                 "_in_memory": false
             }
         "#;
-        let jql = Jql::new();
+        let jql = Jql::new_schema_parser();
         let elp = Instant::now();
-        let res = jql.parse(schema.to_string());
+        let res = jql.parse_schema(schema.to_string());
         assert!(!res.is_err(),"{}",res.err().unwrap());
         println!("schema {:?}",elp.elapsed());
     }

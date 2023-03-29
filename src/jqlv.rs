@@ -9,7 +9,7 @@ use crate::traits::JqlValueParser;
 /// Value checker
 ///
 impl JqlValueParser for Jql {
-    fn new(base: String) -> Self {
+    fn new_value_parser(base: String) -> Self {
         let schema: JqlSchema = serde_json::from_str(base.as_str()).unwrap();
         let mut builder = Builder::build(|f|{
             for pair in schema._fields {
@@ -48,12 +48,12 @@ impl JqlValueParser for Jql {
         }
     }
 
-    fn parse(&self, mut values: String) -> Result<(), JqlError> {
+    fn parse_value(&self, mut values: String) -> Result<(), JqlError> {
         let mut val = serde_json::from_str(values.as_str());
-        self.parse_with_value(val)
+        self.parse_value_with_json(val)
     }
 
-    fn parse_with_value(&self, values: serde_json::error::Result<Value>) -> Result<(), JqlError> {
+    fn parse_value_with_json(&self, values: serde_json::error::Result<Value>) -> Result<(), JqlError> {
         if values.is_ok() {
             let mut v = values.unwrap();
             let state = self.prs.process(&mut v, None);
@@ -97,9 +97,9 @@ mod tests {
         "#);
         let elp = Instant::now();
         println!("starting to parse");
-        let jql = Jql::new(schema.to_string());
+        let jql = Jql::new_value_parser(schema.to_string());
         for i in 0..1 {
-            let res = jql.parse(format!("[{}]",value.to_string()));
+            let res = jql.parse_value(format!("[{}]", value.to_string()));
             assert!(res.is_ok(),"{}",res.err().unwrap());
         }
         println!("schema {:?}",elp.elapsed());

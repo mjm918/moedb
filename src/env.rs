@@ -33,6 +33,10 @@ pub fn env() -> Result<MoeDb,EnvReadError> {
     }
 
     let moedb = sys_cfg.unwrap().moedb;
+
+    fs::create_dir_all(moedb.db_path.as_str()).unwrap();
+    fs::create_dir_all(moedb.log_path.as_str()).unwrap();
+
     let mtd_db = fs::metadata(moedb.db_path.as_str());
     if mtd_db.is_err() || !mtd_db.as_ref().unwrap().is_dir() {
         let err = mtd_db.err().unwrap().to_string();
@@ -44,7 +48,7 @@ pub fn env() -> Result<MoeDb,EnvReadError> {
     if mtd_log.is_err() || !mtd_log.as_ref().unwrap().is_dir() {
         let err = mtd_log.err().unwrap().to_string();
         error!("{}",err);
-        return Err(EnvReadError::LogFileNotValid(err));
+        return Err(EnvReadError::LogPathNotValid(err));
     }
     Ok(moedb)
 }

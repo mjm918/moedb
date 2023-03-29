@@ -1,26 +1,34 @@
+use std::pin::Pin;
 use std::sync::Arc;
-use rocksdb::{DBWithThreadMode, MultiThreaded, Options};
+use rayon::ThreadPool;
+use rocksdb::{DBWithThreadMode, MultiThreaded, OptimisticTransactionDB, Options, ReadOptions, Transaction};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use valico::json_dsl::Builder;
+use crate::env;
+
+pub type TKey = Vec<u8>;
+pub type TValue = Vec<u8>;
 
 pub type MoeDbMode = DBWithThreadMode<MultiThreaded>;
 
-pub struct MoeDb<'a> {
+#[derive(Debug)]
+pub struct MoeDb {
     pub db: Arc<MoeDbMode>,
-    pub opts: Arc<Options>,
-    pub path: &'a str,
-    pub log: &'a str
+    pub exec: Exec
 }
 
+#[derive(Debug)]
 pub struct Exec {
     pub db: Arc<MoeDbMode>,
-    pub opts: Arc<Options>,
+    pub pool: ThreadPool,
+    pub env: Arc<env::MoeDb>
 }
 
-pub struct Ops {
+#[derive(Debug)]
+pub struct Trx {
     pub db: Arc<MoeDbMode>,
-    pub opts: Arc<Options>,
+    pub env: Arc<env::MoeDb>
 }
 
 #[derive(Clone)]
@@ -31,7 +39,7 @@ pub struct ParsedStatement {
     pub pbs_data: String
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Response {
     pub time_taken: String,
     pub error: bool,
@@ -60,7 +68,7 @@ pub struct JqlSchemaFields {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct JqlCommand {
     pub _action: String,
-    pub _body: Option<JqlSchema>,
+    pub _body: Option<Value>,
     pub _database: Option<String>,
     pub _collection: Option<String>
 }

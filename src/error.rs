@@ -12,7 +12,15 @@ pub enum JqlError {
     #[error("malformed schema")]
     MalformedSchema,
     #[error("schema property value error `{0}`")]
-    SchemaPropertyTypeError(String)
+    SchemaPropertyTypeError(String),
+    #[error("no database name provided")]
+    NoDatabaseProvided,
+    #[error("no collection or malformed name provided")]
+    NoCollectionProvided,
+    #[error("no schema or malformed provided")]
+    NoSchemaProvided,
+    #[error("unknown query")]
+    UnknownQuery
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, Clone)]
@@ -21,8 +29,8 @@ pub enum EnvReadError {
     NoContent(String),
     #[error("invalid toml format `{0}`")]
     InvalidToml(String),
-    #[error("log file path is not valid `{0}`")]
-    LogFileNotValid(String),
+    #[error("log path is not valid `{0}`")]
+    LogPathNotValid(String),
     #[error("database path is not valid `{0}`")]
     DbPathNotValid(String)
 }
@@ -36,13 +44,15 @@ pub enum MoeDbError {
     #[error("big endian error `{0}`")]
     BigEndianError(String),
     #[error("error while getting key from db")]
-    GetError
+    GetError,
+    #[error("invalid query `{0}`")]
+    QueryError(String),
+    #[error("transaction error `{0}`")]
+    TransactionError(String)
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, Clone)]
-pub enum OpsError {
-    #[error("create db error `{0}`")]
-    CreateDbError(String),
-    #[error("create collection error `{0}`")]
-    CreateCollectionError(String)
+pub enum TrxError {
+    #[error("error creating db `{0}`")]
+    CreateDbError(String)
 }
