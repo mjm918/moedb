@@ -15,13 +15,14 @@ pub fn is_naming_ok(name: &Option<String>) -> Option<String> {
     }
 }
 
-pub fn unique_id () -> String {
-    format!("#{}",Alphanumeric.sample_string(&mut rand::thread_rng(), 16))
+pub fn unique_id() -> String {
+    format!("#{}", Alphanumeric.sample_string(&mut rand::thread_rng(), 16))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn name_check() {
         let chk = is_naming_ok(&Some("abc".to_string()));

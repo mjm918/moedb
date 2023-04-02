@@ -1,10 +1,9 @@
-use std::time::Instant;
 use fancy_regex::Regex;
-use valico::json_dsl::{array, boolean, Builder, Param, string};
+use valico::json_dsl::{Param, string};
 use crate::error::JqlError;
 use crate::func::is_naming_ok;
-use crate::headers::{ActionType, DataTypes, Jql, JqlCommand, JqlSchema, Types};
-use crate::traits::{JqlSchemaParser, JqlValueParser};
+use crate::headers::{ActionType, DataTypes, Jql, JqlCommand};
+use crate::traits::{JqlSchemaParser};
 
 /// !```
 /// {
@@ -28,8 +27,7 @@ use crate::traits::{JqlSchemaParser, JqlValueParser};
 /// !```
 
 impl Jql {
-
-    pub fn type_declaration(q: &mut Param){
+    pub fn type_declaration(q: &mut Param) {
         q.allow_values(&[
             DataTypes::Int.to_string(),
             DataTypes::Uint.to_string(),
@@ -47,36 +45,36 @@ impl Jql {
         ]);
     }
 
-    pub fn naming_regx(p: &mut Param){
+    pub fn naming_regx(p: &mut Param) {
         p.coerce(string());
         p.regex(Regex::new(r"^[a-z|A-Z][a-z|A-Z\-\d]{2,20}$").unwrap());
     }
 
-    pub fn non_empty_regx(p: &mut Param){
+    pub fn non_empty_regx(p: &mut Param) {
         p.coerce(string());
         p.regex(Regex::new(r"^(?!\s*$).+").unwrap());
     }
 
-    pub fn declare_time(p: &mut Param){
+    pub fn declare_time(p: &mut Param) {
         p.regex(Regex::new(r"^(([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])$").unwrap());
     }
 
-    pub fn declare_date(p: &mut Param){
+    pub fn declare_date(p: &mut Param) {
         p.regex(Regex::new(r"^\d197[0-9]|19[89][0-9]|20[0-9]{2}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$").unwrap());
     }
 
-    pub fn declare_datetime(p: &mut Param){
+    pub fn declare_datetime(p: &mut Param) {
         p.regex(Regex::new(r"^\d197[0-9]|19[89][0-9]|20[0-9]{2}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01]) (([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])$").unwrap());
     }
 
-    pub fn parse(command: &str) -> Result<JqlCommand, JqlError>{
+    pub fn parse(command: &str) -> Result<JqlCommand, JqlError> {
         let parser = serde_json::from_str::<JqlCommand>(command);
         if parser.is_err() {
             return Err(JqlError::DocumentParseError);
         }
         let parsed = parser.unwrap();
         let to_return = parsed.clone();
-        return match ActionType::from(parsed._action) {
+        return match ActionType::from(parsed._action.as_str()) {
             ActionType::Create => {
                 match Jql::is_create_collection_ok(&to_return) {
                     Ok(_) => Ok(to_return),
@@ -119,7 +117,8 @@ impl Jql {
                     Err(er) => Err(er)
                 }
             }
-        }
+            _ => Err(JqlError::UnknownQuery)
+        };
     }
 
     fn is_collection_ok(cmd: &JqlCommand) -> Result<(), JqlError> {
@@ -162,6 +161,7 @@ impl Jql {
 mod tests {
     use std::time::Instant;
     use super::*;
+
     #[test]
     fn create_collection() {
         let json = r#"
@@ -187,8 +187,8 @@ mod tests {
         "#;
         let elp = Instant::now();
         let parser = Jql::parse(json);
-        println!("create_collection :: {:?}",elp.elapsed());
-        assert!(parser.is_ok(),"{}",parser.err().unwrap().to_string());
+        // println!("create_collection :: {:?}",elp.elapsed());
+        assert!(parser.is_ok(), "{}", parser.err().unwrap().to_string());
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
         "#;
         let elp = Instant::now();
         let parser = Jql::parse(json);
-        println!("create_db :: {:?}",elp.elapsed());
+        // println!("create_db :: {:?}",elp.elapsed());
         assert!(parser.is_ok());
     }
 
@@ -217,7 +217,7 @@ mod tests {
         "#;
         let elp = Instant::now();
         let parser = Jql::parse(json);
-        println!("drop_db :: {:?}",elp.elapsed());
+        // println!("drop_db :: {:?}",elp.elapsed());
         assert!(parser.is_ok());
     }
 
@@ -232,7 +232,7 @@ mod tests {
         "#;
         let elp = Instant::now();
         let parser = Jql::parse(json);
-        println!("drop_collection :: {:?}",elp.elapsed());
+        // println!("drop_collection :: {:?}",elp.elapsed());
         assert!(parser.is_ok());
     }
 }

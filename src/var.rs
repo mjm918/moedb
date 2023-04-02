@@ -4,6 +4,9 @@ pub const ENV_PATH: &str = if cfg!(debug_assertions) {
     "./moedb.toml"
 };
 
-pub const DB_CREDS: &str = "::credentials::";
-pub const DB_SYS: &str = "::sys::";
-pub const DB_LOG: &str = "::logs::";
+pub const DB_CREDS: &str = "credentials";
+pub const DB_SYS: &str = "sys";
+pub const DB_LOG: &str = "logs";
+
+
+pub const DB_PREFIX: &str = "database::";

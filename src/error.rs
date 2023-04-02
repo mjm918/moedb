@@ -20,7 +20,7 @@ pub enum JqlError {
     #[error("no schema or malformed provided")]
     NoSchemaProvided,
     #[error("unknown query")]
-    UnknownQuery
+    UnknownQuery,
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, Clone)]
@@ -32,7 +32,7 @@ pub enum EnvReadError {
     #[error("log path is not valid `{0}`")]
     LogPathNotValid(String),
     #[error("database path is not valid `{0}`")]
-    DbPathNotValid(String)
+    DbPathNotValid(String),
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, Clone)]
@@ -48,11 +48,31 @@ pub enum MoeDbError {
     #[error("invalid query `{0}`")]
     QueryError(String),
     #[error("transaction error `{0}`")]
-    TransactionError(String)
+    TransactionError(String),
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, Clone)]
 pub enum TrxError {
     #[error("error creating db `{0}`")]
-    CreateDbError(String)
+    CreateDbError(String),
+    #[error("error creating collection `{0}`")]
+    CreateCollectionError(String),
+    #[error("error truncating collection `{0}`")]
+    TruncateCollectionError(String),
+    #[error("error dropping collection `{0}`")]
+    DropCollectionError(String),
+    #[error("unknown error")]
+    UnknownError
+}
+
+pub enum NativeError {
+    CfAlreadyExists,
+    CfDoesNotExists
+}
+
+pub fn from_native_error(err: String) -> Option<NativeError> {
+    if err.contains("Invalid column family") {
+        return Some(NativeError::CfDoesNotExists);
+    }
+    None
 }

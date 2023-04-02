@@ -1,7 +1,6 @@
-use std::pin::Pin;
 use std::sync::Arc;
 use rayon::ThreadPool;
-use rocksdb::{DBWithThreadMode, MultiThreaded, OptimisticTransactionDB, Options, ReadOptions, Transaction};
+use rocksdb::{DBWithThreadMode, MultiThreaded};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use valico::json_dsl::Builder;
@@ -12,20 +11,16 @@ pub type TValue = Vec<u8>;
 
 pub type MoeDbMode = DBWithThreadMode<MultiThreaded>;
 
-#[derive(Debug)]
 pub struct MoeDb {
-    pub db: Arc<MoeDbMode>,
     pub exec: Exec
 }
 
-#[derive(Debug)]
 pub struct Exec {
-    pub db: Arc<MoeDbMode>,
     pub pool: ThreadPool,
-    pub env: Arc<env::MoeDb>
+    pub env: Arc<env::MoeDb>,
+    pub trx: Arc<Trx>
 }
 
-#[derive(Debug)]
 pub struct Trx {
     pub db: Arc<MoeDbMode>,
     pub env: Arc<env::MoeDb>
@@ -36,7 +31,7 @@ pub struct ParsedStatement {
     pub cmd: Option<ActionType>,
     pub db: String,
     pub store: String,
-    pub pbs_data: String
+    pub pbs_data: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -44,33 +39,33 @@ pub struct Response {
     pub time_taken: String,
     pub error: bool,
     pub message: String,
-    pub data: Option<Value>
+    pub data: Option<Value>,
 }
 
 pub struct Jql {
-    pub prs: Builder
+    pub prs: Builder,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct JqlSchema {
     pub _name: String,
     pub _key: String,
-    pub _fields: Vec<JqlSchemaFields>
+    pub _fields: Vec<JqlSchemaFields>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct JqlSchemaFields {
     pub _name: String,
     pub _declare: String,
-    pub _optional: Option<String>
+    pub _optional: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct JqlCommand {
     pub _action: String,
     pub _body: Option<Value>,
     pub _database: Option<String>,
-    pub _collection: Option<String>
+    pub _collection: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -87,7 +82,7 @@ pub enum DataTypes {
     ArrayOfInt,
     ArrayOfUint,
     ArrayOfFloat,
-    ArrayOfBoolean
+    ArrayOfBoolean,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -96,10 +91,10 @@ pub enum Types {
     Key,
     Fields,
     InMemory,
-    Declare
+    Declare,
 }
 
-#[derive(Clone,Ord, PartialOrd, Eq, Debug)]
+#[derive(Clone, Ord, PartialOrd, Eq, Debug)]
 pub enum ActionType {
     Create,
     CreateDb,
@@ -109,13 +104,14 @@ pub enum ActionType {
     Drop,
     DropDb,
     DbList,
-    Truncate
+    Truncate,
+    Unknown
 }
 
-#[derive(Clone,Ord, PartialOrd, Eq, Debug)]
+#[derive(Clone, Ord, PartialOrd, Eq, Debug)]
 pub enum CommandType {
     Action,
     Body,
     Database,
-    Store
+    Store,
 }

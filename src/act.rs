@@ -7,9 +7,9 @@ impl Display for ActionType {
     }
 }
 
-impl From<String> for ActionType {
-    fn from(value: String) -> Self {
-        match value.as_str() {
+impl From<&str> for ActionType {
+    fn from(value: &str) -> Self {
+        match value {
             "create-db" => ActionType::CreateDb,
             "create-collection" => ActionType::Create,
             "get" => ActionType::Get,
@@ -19,7 +19,7 @@ impl From<String> for ActionType {
             "drop-db" => ActionType::DropDb,
             "truncate" => ActionType::Truncate,
             "db-*" => ActionType::DbList,
-            _ => ActionType::Get
+            _ => ActionType::Unknown
         }
     }
 }
@@ -35,7 +35,8 @@ impl ActionType {
             ActionType::Drop => "drop-collection".to_string(),
             ActionType::DropDb => "drop-db".to_string(),
             ActionType::DbList => "db-*".to_string(),
-            ActionType::Truncate => "truncate".to_string()
+            ActionType::Truncate => "truncate".to_string(),
+            _ => "".to_string()
         }
     }
 }

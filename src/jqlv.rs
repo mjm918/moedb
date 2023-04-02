@@ -1,17 +1,17 @@
-use fancy_regex::Regex;
 use serde_json::Value;
-use tracing::error;
-use valico::json_dsl::{array, array_of, boolean, Builder, f64, i64, string, u64};
+use log::{error};
+use valico::json_dsl::{array_of, boolean, Builder, f64, i64, string, u64};
 use crate::error::JqlError;
 use crate::headers::{DataTypes, Jql, JqlSchema};
 use crate::traits::JqlValueParser;
+
 ///
 /// Value checker
 ///
 impl JqlValueParser for Jql {
     fn new_value_parser(base: String) -> Self {
         let schema: JqlSchema = serde_json::from_str(base.as_str()).unwrap();
-        let mut builder = Builder::build(|f|{
+        let mut builder = Builder::build(|f| {
             for pair in schema._fields {
                 let nv = pair._name;
                 let cr = match DataTypes::from(pair._declare.clone()) {
@@ -29,7 +29,7 @@ impl JqlValueParser for Jql {
                     DataTypes::ArrayOfFloat => array_of(f64()),
                     DataTypes::ArrayOfBoolean => array_of(boolean())
                 };
-                f.req(nv.as_str(),|p|{
+                f.req(nv.as_str(), |p| {
                     p.coerce(cr);
                     if DataTypes::from(pair._declare.clone()) == DataTypes::DateTime {
                         Jql::declare_datetime(p);
@@ -60,10 +60,10 @@ impl JqlValueParser for Jql {
             return if state.is_strictly_valid() {
                 Ok(())
             } else {
-                let err = JqlError::DocumentPropertyDataTypeError(format!("{:?}",state));
+                let err = JqlError::DocumentPropertyDataTypeError(format!("{:?}", state));
                 error!("{}",err);
                 Err(err)
-            }
+            };
         } else {
             let err = JqlError::DocumentParseError;
             error!("{}",err);
@@ -71,10 +71,12 @@ impl JqlValueParser for Jql {
         }
     }
 }
+
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
     use super::*;
+
     #[test]
     fn val_check() {
         let schema = r#"
@@ -96,12 +98,11 @@ mod tests {
             }
         "#);
         let elp = Instant::now();
-        println!("starting to parse");
         let jql = Jql::new_value_parser(schema.to_string());
         for i in 0..1 {
             let res = jql.parse_value(format!("[{}]", value.to_string()));
-            assert!(res.is_ok(),"{}",res.err().unwrap());
+            assert!(res.is_ok(), "{}", res.err().unwrap());
         }
-        println!("schema {:?}",elp.elapsed());
+        // println!("schema {:?}",elp.elapsed());
     }
 }
