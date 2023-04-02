@@ -1,4 +1,5 @@
 use std::thread;
+use itertools::Itertools;
 use rocksdb::{DB, DBCompactionStyle, DBCompressionType, DBRecoveryMode, Options};
 
 pub fn use_available_threads() -> usize {
@@ -38,4 +39,25 @@ pub fn key_merger(keys: Vec<String>) -> Option<String> {
         return None;
     }
     Some(keys.join("#"))
+}
+
+pub fn key_splitter(key: String) -> Option<Vec<String>> {
+    if !key.contains("#") {
+        return None;
+    }
+    let keys = key.split("#").into_iter().map(|s|s.to_string()).collect_vec();
+    Some(keys)
+}
+
+pub fn ksm_db(key: String) -> Option<String> {
+    let keys = key_splitter(key);
+    if keys.is_none() {
+        return None;
+    }
+    let res = keys.unwrap();
+    if res.len() != 2 {
+        return None;
+    }
+    let k = res.get(1).unwrap().clone();
+    Some(k)
 }

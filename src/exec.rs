@@ -3,6 +3,7 @@ use std::sync::mpsc::channel;
 use rayon::ThreadPoolBuilder;
 use rocksdb::Options;
 use log::{trace};
+use serde_json::Value;
 use crate::env;
 use crate::env::env;
 use crate::error::{MoeDbError, TrxError};
@@ -27,9 +28,9 @@ impl Exec {
         })
     }
 
-    pub fn run(&self, stmt: &str) -> Result<(), MoeDbError> {
+    pub fn run(&self, stmt: &str) -> Result<Option<Vec<Value>>, MoeDbError> {
         let cmd = stmt.to_string();
-        let (tx, rx) = channel::<Result<(), MoeDbError>>();
+        let (tx, rx) = channel::<Result<Option<Vec<Value>>, MoeDbError>>();
         self.pool.scope(|scp|{
             scp.spawn(move |_|{
                 let jql = Jql::parse(cmd.as_str());
@@ -51,25 +52,26 @@ impl Exec {
                     ActionType::Upsert => todo!(),
                     ActionType::Delete => todo!(),
                     ActionType::Drop => self.drop_col(&parsed),
-                    ActionType::DropDb => todo!(),
-                    ActionType::DbList => todo!(),
+                    ActionType::DropDb => self.drop_db(&parsed),
+                    ActionType::DbList => self.db_list(),
                     ActionType::Truncate => self.trun_col(&parsed),
-                    _ => Err(TrxError::CreateDbError("unknown operation requested".to_string()))
+                    ActionType::ColList => self.col_list(&parsed),
+                    _ => self.db_list()
                 };
 
-                if exec_res.is_err() {
-                    let err = MoeDbError::TransactionError(exec_res.err().unwrap().to_string());
+                if exec_res.error.is_some() {
+                    let err = MoeDbError::TransactionError(exec_res.error.unwrap().to_string());
                     trace!("error on trx {}",err);
                     tx.send(Err(err)).unwrap();
                     return;
                 }
-                tx.send(Ok(())).unwrap();
+                tx.send(Ok(exec_res.data)).unwrap();
             });
         });
         let received = rx.recv().unwrap();
         if received.is_err() {
             return Err(received.err().unwrap());
         }
-        Ok(())
+        Ok(received.unwrap())
     }
 }

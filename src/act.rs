@@ -19,6 +19,7 @@ impl From<&str> for ActionType {
             "drop-db" => ActionType::DropDb,
             "truncate" => ActionType::Truncate,
             "db-*" => ActionType::DbList,
+            "col-*" => ActionType::ColList,
             _ => ActionType::Unknown
         }
     }
@@ -36,6 +37,7 @@ impl ActionType {
             ActionType::DropDb => "drop-db".to_string(),
             ActionType::DbList => "db-*".to_string(),
             ActionType::Truncate => "truncate".to_string(),
+            ActionType::ColList => "col-*".to_string(),
             _ => "".to_string()
         }
     }

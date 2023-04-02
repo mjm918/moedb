@@ -35,14 +35,17 @@ impl MoeDb {
         trace!("executed query {} in {}",query_id.as_str(), ended.as_str());
         let err = res.is_err();
         let mut message =  "".to_string();
+        let mut data = None;
         if err {
-            message = res.err().unwrap().to_string();
+            message = res.as_ref().err().unwrap().to_string();
+        } else {
+            data = res.unwrap();
         }
         Response {
             time_taken: ended,
             error: err,
             message,
-            data: None,
+            data,
         }
     }
 }

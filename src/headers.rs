@@ -5,6 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use valico::json_dsl::Builder;
 use crate::env;
+use crate::error::TrxError;
 
 pub type TKey = Vec<u8>;
 pub type TValue = Vec<u8>;
@@ -39,7 +40,13 @@ pub struct Response {
     pub time_taken: String,
     pub error: bool,
     pub message: String,
-    pub data: Option<Value>,
+    pub data: Option<Vec<Value>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DbRes {
+    pub data: Option<Vec<Value>>,
+    pub error: Option<TrxError>,
 }
 
 pub struct Jql {
@@ -104,6 +111,7 @@ pub enum ActionType {
     Drop,
     DropDb,
     DbList,
+    ColList,
     Truncate,
     Unknown
 }

@@ -61,6 +61,8 @@ pub enum TrxError {
     TruncateCollectionError(String),
     #[error("error dropping collection `{0}`")]
     DropCollectionError(String),
+    #[error("error dropping db `{0}`")]
+    DropDbError(String),
     #[error("unknown error")]
     UnknownError
 }

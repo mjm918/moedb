@@ -95,6 +95,35 @@ mod tests {
         let pr = res.clone();
         println!("create_collection {:?} response {} res.error {} message {}", elp.elapsed(), pr, res.error, res.message);
 
+        db_list(db);
+    }
+
+    pub fn db_list(db: MoeDb) {
+        let elp = Instant::now();
+        let res = db.execute(r#"
+            {
+                "_action":"db-*"
+            }
+        "#.to_string());
+        let pr = res.clone();
+        assert!(!res.error, "{}", res.message);
+        println!("db_list {:?} response {} res.error {}", elp.elapsed(), serde_json::to_string(&pr.data.unwrap()).unwrap(), res.error);
+
+        col_list(db);
+    }
+
+    pub fn col_list(db: MoeDb) {
+        let elp = Instant::now();
+        let res = db.execute(r#"
+            {
+                "_action":"col-*",
+                "_database":"random"
+            }
+        "#.to_string());
+        let pr = res.clone();
+        assert!(!res.error, "{}", res.message);
+        println!("col_list {:?} response {} res.error {}", elp.elapsed(), serde_json::to_string(&pr.data.unwrap()).unwrap(), res.error);
+
         truncate_collection(db);
     }
 
@@ -125,5 +154,20 @@ mod tests {
         let pr = res.clone();
         assert!(!res.error, "{}", res.message);
         println!("drop_collection {:?} response {} res.error {}", elp.elapsed(), pr, res.error);
+
+        drop_db(db);
+    }
+
+    pub fn drop_db(db: MoeDb) {
+        let elp = Instant::now();
+        let res = db.execute(r#"
+            {
+                "_action":"drop-db",
+                "_database":"random"
+            }
+        "#.to_string());
+        let pr = res.clone();
+        assert!(!res.error, "{}", res.message);
+        println!("drop_db {:?} response {} res.error {}", elp.elapsed(), pr, res.error);
     }
 }

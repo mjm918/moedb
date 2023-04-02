@@ -108,11 +108,15 @@ impl Jql {
                     Err(er) => Err(er)
                 }
             }
-            ActionType::DbList => {
-                todo!()
-            }
+            ActionType::DbList => Ok(to_return),
             ActionType::Truncate => {
                 match Jql::is_collection_ok(&to_return) {
+                    Ok(_) => Ok(to_return),
+                    Err(er) => Err(er)
+                }
+            }
+            ActionType::ColList => {
+                match Jql::is_db_ok(&to_return) {
                     Ok(_) => Ok(to_return),
                     Err(er) => Err(er)
                 }

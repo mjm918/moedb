@@ -2,7 +2,7 @@ use std::str;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use log::{error, trace};
-use rocksdb::{BoundColumnFamily, DB, DBCommon, DBRawIterator, DBRawIteratorWithThreadMode, Direction, Error, IteratorMode, MultiThreaded, Options};
+use rocksdb::{BoundColumnFamily, DB, DBCommon, DBRawIterator, DBRawIteratorWithThreadMode, Direction, Error, IteratorMode, MultiThreaded, Options, PrefixRange, ReadOptions};
 use serde_json::Value;
 use crate::env;
 use crate::error::{MoeDbError, TrxError};
@@ -70,6 +70,12 @@ impl Trx {
         self.db.raw_iterator_cf(&self.cf(name))
     }
 
+    pub fn range_iter(&self, name: &str, prefix: TKey) -> DBRawIterator {
+        let mut opts = ReadOptions::default();
+        opts.set_iterate_range(PrefixRange(prefix.as_slice()));
+        self.db.raw_iterator_cf_opt(&self.cf(name),opts)
+    }
+
     pub fn create_cf(&self, name: &str) -> Result<(), TrxError> {
         let res = self.db.create_cf(name, &cfg_db(self.env.log_path.as_str()));
         if res.is_err() {
@@ -105,8 +111,17 @@ impl Trx {
         self.db.drop_cf(cf_name)
     }
 
-    pub fn through(&self, cf_name: &str, key: TKey) -> BTreeMap<String, Value> {
-        self.db.snapshot();
+    pub fn through(&self, cf_name: &str, prefix: TKey) -> BTreeMap<String, Value> {
+        let mut res = BTreeMap::new();
+        let mut iter = self.range_iter(cf_name, prefix);
+        iter.seek_to_first();
+        while iter.valid() {
+            let kv = iter.item().unwrap().clone();
+            res.insert(str::from_utf8(kv.0).unwrap().to_string(),serde_json::from_slice::<Value>(kv.1).unwrap());
+            iter.next();
+        }
+        res
+        /*self.db.snapshot();
         let mut res = BTreeMap::new();
         let mut iter = self.raw_iter(cf_name);
         iter.seek(key);
@@ -115,6 +130,6 @@ impl Trx {
             res.insert(str::from_utf8(kv.0).unwrap().to_string(),serde_json::from_slice::<Value>(kv.1).unwrap());
             iter.next();
         }
-        res
+        res*/
     }
 }
