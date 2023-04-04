@@ -1,11 +1,15 @@
 use anyhow::{Result};
 use serde_json::Value;
-use valico::json_dsl::{array, boolean, Builder, Coercer};
+use valico::json_dsl::{array, boolean, Builder};
 use log::{error};
-use crate::error::JqlError;
-use crate::headers::{Jql, Types};
-use crate::traits::JqlSchemaParser;
+use crate::err::JqlError;
+use crate::hdrs::{Jql, Types};
 
+pub trait JqlSchemaParser {
+    fn new_schema_parser() -> Self;
+    fn parse_schema(&self, values: String) -> Result<(), JqlError>;
+    fn parse_schema_with_json(&self, values: serde_json::error::Result<Value>) -> Result<(), JqlError>;
+}
 ///
 /// Schema Checker
 ///
@@ -28,7 +32,7 @@ impl JqlSchemaParser for Jql {
     }
 
     fn parse_schema(&self, values: String) -> Result<(), JqlError> {
-        let mut val = serde_json::from_str(values.as_str());
+        let val = serde_json::from_str(values.as_str());
         self.parse_schema_with_json(val)
     }
 

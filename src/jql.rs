@@ -1,9 +1,9 @@
 use fancy_regex::Regex;
 use valico::json_dsl::{Param, string};
-use crate::error::JqlError;
+use crate::err::JqlError;
 use crate::func::is_naming_ok;
-use crate::headers::{ActionType, DataTypes, Jql, JqlCommand};
-use crate::traits::{JqlSchemaParser};
+use crate::hdrs::{ActionType, DataTypes, Jql, JqlCommand};
+use crate::jqls::JqlSchemaParser;
 
 /// !```
 /// {

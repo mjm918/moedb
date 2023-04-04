@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use crate::headers::Response;
+use crate::hdrs::Response;
 
 impl Display for Response {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

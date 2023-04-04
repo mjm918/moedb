@@ -1,5 +1,5 @@
 use fancy_regex::Regex;
-use rand::distributions::{Alphanumeric, DistString};
+use uuid::Uuid;
 
 pub fn is_naming_ok(name: &Option<String>) -> Option<String> {
     match name.is_some() {
@@ -16,7 +16,7 @@ pub fn is_naming_ok(name: &Option<String>) -> Option<String> {
 }
 
 pub fn unique_id() -> String {
-    format!("#{}", Alphanumeric.sample_string(&mut rand::thread_rng(), 16))
+    format!("{}", Uuid::new_v4().simple())
 }
 
 #[cfg(test)]

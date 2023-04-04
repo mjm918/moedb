@@ -1,4 +1,5 @@
-use std::thread;
+use std::path::Path;
+use std::{fs, thread};
 use itertools::Itertools;
 use rocksdb::{DB, DBCompactionStyle, DBCompressionType, DBRecoveryMode, Options};
 
@@ -32,6 +33,12 @@ pub fn cfg_db(log: &str) -> Options {
     opts.set_optimize_filters_for_hits(true);
     opts.set_wal_recovery_mode(DBRecoveryMode::TolerateCorruptedTailRecords);
     opts
+}
+
+pub fn query_log_cf_path(log_path: &str) -> String {
+    let path = Path::new(log_path);
+    let log = path.join("query-log");
+    format!("{}",log.to_str().unwrap())
 }
 
 pub fn key_merger(keys: Vec<String>) -> Option<String> {

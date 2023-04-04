@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use crate::headers::Types;
+use crate::hdrs::Types;
 
 impl Display for Types {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

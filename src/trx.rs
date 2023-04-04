@@ -2,18 +2,18 @@ use std::str;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use log::{error, trace};
-use rocksdb::{BoundColumnFamily, DB, DBCommon, DBRawIterator, DBRawIteratorWithThreadMode, Direction, Error, IteratorMode, MultiThreaded, Options, PrefixRange, ReadOptions};
+use rocksdb::{BoundColumnFamily, DB, DBRawIterator, Error, Options, PrefixRange, ReadOptions};
 use serde_json::Value;
 use crate::env;
-use crate::error::{MoeDbError, TrxError};
-use crate::headers::{JqlCommand, MoeDbMode, TKey, Trx, TValue};
-use crate::util::{cfg_db, get_cfs};
+use crate::err::{MoeDbError, TrxError};
+use crate::hdrs::{MoeDbMode, TKey, Trx, TValue};
+use crate::util::{cfg_db, get_cfs, query_log_cf_path};
 use crate::var::{DB_CREDS, DB_LOG, DB_SYS};
 
 impl Trx {
 
-    pub fn new(env: Arc<env::MoeDb>) -> Result<Self, MoeDbError> {
-        let ins = Self::init(env.db_path.as_str(), env.log_path.as_str());
+    pub fn new(env: Arc<env::MoeDb>, with_log: bool) -> Result<Self, MoeDbError> {
+        let ins = Self::init(env.db_path.as_str(), env.log_path.as_str(), with_log);
         if ins.is_err() {
             return Err(ins.err().unwrap());
         }
@@ -25,13 +25,18 @@ impl Trx {
         })
     }
 
-    fn init(path: &str, log: &str) -> Result<(MoeDbMode, Options), MoeDbError> {
-        let (opts, cfs) = Self::opts_cf_pair(path, log);
-        trace!("{}",format!("moedb cfs {:?}",&cfs));
-
+    fn init(path: &str, log: &str, open_log: bool) -> Result<(MoeDbMode, Options), MoeDbError> {
+        let mut sys_cfs = vec![DB_CREDS, DB_SYS];
+        let mut db_path = path.to_string();
+        if open_log {
+            let p = query_log_cf_path(path);
+            db_path = p;
+            sys_cfs = vec![DB_LOG];
+        }
+        let (opts, cfs) = Self::opts_cf_pair(db_path.as_str(), log);
         let ins = DB::open_cf(
             &opts,
-            path,
+            db_path.as_str(),
             cfs.clone()
         );
         if ins.is_err() {
@@ -39,7 +44,7 @@ impl Trx {
         }
         let moedb = ins.unwrap();
 
-        vec![DB_CREDS, DB_SYS, DB_LOG]
+        sys_cfs
             .into_iter()
             .for_each(|sys_db| {
                 if !cfs.contains(&sys_db.to_string()) {

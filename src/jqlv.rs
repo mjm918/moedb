@@ -1,17 +1,21 @@
 use serde_json::Value;
 use log::{error};
 use valico::json_dsl::{array_of, boolean, Builder, f64, i64, string, u64};
-use crate::error::JqlError;
-use crate::headers::{DataTypes, Jql, JqlSchema};
-use crate::traits::JqlValueParser;
+use crate::err::JqlError;
+use crate::hdrs::{DataTypes, Jql, JqlSchema};
 
+pub trait JqlValueParser {
+    fn new_value_parser(base: String) -> Self;
+    fn parse_value(&self, values: String) -> Result<(), JqlError>;
+    fn parse_value_with_json(&self, values: serde_json::error::Result<Value>) -> Result<(), JqlError>;
+}
 ///
 /// Value checker
 ///
 impl JqlValueParser for Jql {
     fn new_value_parser(base: String) -> Self {
         let schema: JqlSchema = serde_json::from_str(base.as_str()).unwrap();
-        let mut builder = Builder::build(|f| {
+        let builder = Builder::build(|f| {
             for pair in schema._fields {
                 let nv = pair._name;
                 let cr = match DataTypes::from(pair._declare.clone()) {
@@ -48,8 +52,8 @@ impl JqlValueParser for Jql {
         }
     }
 
-    fn parse_value(&self, mut values: String) -> Result<(), JqlError> {
-        let mut val = serde_json::from_str(values.as_str());
+    fn parse_value(&self, values: String) -> Result<(), JqlError> {
+        let val = serde_json::from_str(values.as_str());
         self.parse_value_with_json(val)
     }
 
@@ -92,7 +96,7 @@ mod tests {
                 "_in_memory": false
             }
         "#;
-        let mut value = String::from(r#"
+        let value = String::from(r#"
             {
                 "hello":"01:23:23"
             }

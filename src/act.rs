@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use crate::headers::ActionType;
+use crate::hdrs::ActionType;
 
 impl Display for ActionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

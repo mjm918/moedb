@@ -1,4 +1,5 @@
 [moedb]
 db_path = "/Users/julfikar/Documents/Personal.nosync/moedb/tests/moedb"
 log_path = "/Users/julfikar/Documents/Personal.nosync/moedb/tests/moedb-log"
+max_log = 100_000
 default_auth = ["root","admin"]

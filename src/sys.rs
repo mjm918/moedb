@@ -1,7 +1,7 @@
 use itertools::Itertools;
-use log::{error, info, trace, warn};
-use crate::error::TrxError;
-use crate::headers::{DbRes, Exec, JqlCommand, Types};
+use log::{error, info, warn};
+use crate::err::TrxError;
+use crate::hdrs::{DbRes, Exec, JqlCommand, Types};
 use crate::util::{key_merger, ksm_db};
 use crate::var::{DB_PREFIX, DB_SYS};
 

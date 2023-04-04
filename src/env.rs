@@ -2,7 +2,7 @@ use anyhow::{Result};
 use std::fs;
 use serde_derive::{Deserialize};
 use log::{error};
-use crate::error::EnvReadError;
+use crate::err::EnvReadError;
 use crate::var::ENV_PATH;
 
 #[derive(Debug, Deserialize, Clone)]

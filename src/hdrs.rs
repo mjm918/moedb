@@ -1,11 +1,10 @@
 use std::sync::Arc;
-use rayon::ThreadPool;
 use rocksdb::{DBWithThreadMode, MultiThreaded};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use valico::json_dsl::Builder;
 use crate::env;
-use crate::error::TrxError;
+use crate::err::TrxError;
 
 pub type TKey = Vec<u8>;
 pub type TValue = Vec<u8>;
@@ -13,11 +12,15 @@ pub type TValue = Vec<u8>;
 pub type MoeDbMode = DBWithThreadMode<MultiThreaded>;
 
 pub struct MoeDb {
-    pub exec: Exec
+    pub exec: Arc<Exec>,
+    pub log: Arc<Logging>
+}
+
+pub struct Logging {
+    pub trx: Arc<Trx>
 }
 
 pub struct Exec {
-    pub pool: ThreadPool,
     pub env: Arc<env::MoeDb>,
     pub trx: Arc<Trx>
 }

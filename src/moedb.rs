@@ -1,38 +1,42 @@
-use std::io::stdout;
 use anyhow::{Result};
 use std::sync::Arc;
 use std::time::Instant;
-use rocksdb::{DB, Options};
-use toml::Value;
-use log::{trace, info, error};
+use crossbeam::channel::unbounded;
+use log::{trace};
 use crate::env;
-use crate::error::MoeDbError;
+use crate::err::MoeDbError;
 use crate::func::unique_id;
-use crate::headers::{Exec, Jql, MoeDb, MoeDbMode, Response};
-use crate::util::{cfg_db, get_cfs};
-use crate::var::{DB_CREDS, DB_LOG, DB_SYS};
+use crate::hdrs::{Exec, Logging, MoeDb, Response};
 
 impl MoeDb {
     pub fn new(cfg: env::MoeDb) -> Result<Self, MoeDbError> {
-        let exec = Exec::new(Arc::new(cfg));
+        let config = Arc::new(cfg);
+        let exec = Exec::new(Arc::clone(&config));
         if exec.is_err() {
             return Err(exec.err().unwrap());
         }
+        let log = Logging::new(Arc::clone(&config));
+        if log.is_err() {
+            return Err(log.err().unwrap());
+        }
         Ok(Self {
-            exec: exec.unwrap()
+            exec: Arc::new(exec.unwrap()),
+            log: Arc::new(log.unwrap())
         })
     }
-
-    pub fn execute(&self, stmt: String) -> Response {
+    ///
+    // create_db 27.280959ms response query executed in "4.23975ms"
+    // create_collection 19.507875ms response query executed in "19.24775ms"
+    // db_list 660.291µs response ["random"]
+    // col_list 4.234375ms response ["numbers"]
+    ///
+    pub fn execute(&self, stmt: &str) -> Response {
         let elp = Instant::now();
+        let uid = unique_id();
+        let query_id = uid.as_str();
+        trace!("received a new query with given ID {}", query_id.clone());
 
-        let query_id = unique_id();
-        trace!("received a new query with given ID {}", query_id.as_str());
-
-        let res = self.exec.run(stmt.as_str());
-        let ended = format!("{:?}", elp.elapsed());
-
-        trace!("executed query {} in {}",query_id.as_str(), ended.as_str());
+        let res = self.exec.run(query_id.clone(),stmt);
         let err = res.is_err();
         let mut message =  "".to_string();
         let mut data = None;
@@ -41,11 +45,15 @@ impl MoeDb {
         } else {
             data = res.unwrap();
         }
-        Response {
-            time_taken: ended,
+        let ended = format!("{:?}", elp.elapsed());
+        let response = Response {
+            time_taken: ended.clone(),
             error: err,
             message,
             data,
-        }
+        };
+        trace!("executed query {} in {}",query_id.clone(), ended.as_str());
+
+        response
     }
 }

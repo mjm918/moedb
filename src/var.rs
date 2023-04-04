@@ -10,3 +10,5 @@ pub const DB_LOG: &str = "logs";
 
 
 pub const DB_PREFIX: &str = "database::";
+pub const QUERY_LOG_PREFIX: &str = "query::";
+pub const RES_LOG_PREFIX: &str = "query-result::";

@@ -1,16 +1,15 @@
 use std::fs::File;
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TerminalMode, TermLogger, WriteLogger};
-use crate::error::MoeDbError;
+use crate::err::MoeDbError;
 use crate::func::unique_id;
-use crate::headers::MoeDb;
+use crate::hdrs::MoeDb;
 
-mod error;
+mod err;
 mod env;
 mod var;
-mod headers;
+mod hdrs;
 mod util;
 mod jqlv;
-mod traits;
 mod jqls;
 mod dtp;
 mod mtp;
@@ -42,7 +41,7 @@ fn start_moedb() -> Result<MoeDb, MoeDbError> {
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
-    use crate::headers::MoeDb;
+    use crate::hdrs::MoeDb;
     use super::*;
     #[test]
     pub fn open_env() {
@@ -66,7 +65,7 @@ mod tests {
                 "_database":"random",
                 "_body":{}
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         println!("create_db {:?} response {} res.error {} message {}", elp.elapsed(), pr, res.error, res.message);
 
@@ -91,7 +90,7 @@ mod tests {
                     "_in_memory": false
                 }
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         println!("create_collection {:?} response {} res.error {} message {}", elp.elapsed(), pr, res.error, res.message);
 
@@ -104,7 +103,7 @@ mod tests {
             {
                 "_action":"db-*"
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         assert!(!res.error, "{}", res.message);
         println!("db_list {:?} response {} res.error {}", elp.elapsed(), serde_json::to_string(&pr.data.unwrap()).unwrap(), res.error);
@@ -119,7 +118,7 @@ mod tests {
                 "_action":"col-*",
                 "_database":"random"
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         assert!(!res.error, "{}", res.message);
         println!("col_list {:?} response {} res.error {}", elp.elapsed(), serde_json::to_string(&pr.data.unwrap()).unwrap(), res.error);
@@ -135,7 +134,7 @@ mod tests {
                 "_database":"random",
                 "_collection":"numbers"
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         println!("truncate_collection {:?} response {} res.error {} message {}", elp.elapsed(), pr, res.error, res.message);
 
@@ -150,7 +149,7 @@ mod tests {
                 "_database":"random",
                 "_collection":"numbers"
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         assert!(!res.error, "{}", res.message);
         println!("drop_collection {:?} response {} res.error {}", elp.elapsed(), pr, res.error);
@@ -165,7 +164,7 @@ mod tests {
                 "_action":"drop-db",
                 "_database":"random"
             }
-        "#.to_string());
+        "#);
         let pr = res.clone();
         assert!(!res.error, "{}", res.message);
         println!("drop_db {:?} response {} res.error {}", elp.elapsed(), pr, res.error);
